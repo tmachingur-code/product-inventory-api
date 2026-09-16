@@ -1,0 +1,24 @@
+// Prisma Client configuration
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// PostgreSQL database
+datasource db {
+  provider = "postgresql"
+}
+
+// Product model
+model Product {
+  id                Int      @id @default(autoincrement())
+  name              String
+  description       String?
+  sku               String   @unique
+  price             Decimal  @db.Decimal(10, 2)
+  quantity          Int      @default(0)
+  category          String?
+  lowStockThreshold Int      @default(5)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

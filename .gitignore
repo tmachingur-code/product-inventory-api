@@ -32,3 +32,13 @@ dist/
 build/
 .tmp/
 temp/
+/src/generated/prisma
+
+# Prisma generated AI/agent skills
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# Prisma generated client
+src/generated/prisma/

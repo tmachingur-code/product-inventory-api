@@ -1,6 +1,13 @@
 const express = require("express");
 
 const productController = require("../controllers/productController");
+const validate = require("../middleware/validate");
+
+const {
+    createProductSchema,
+    updateProductSchema,
+    productIdSchema,
+} = require("../schemas/productSchema");
 
 /**
  * Product Routes
@@ -16,7 +23,11 @@ const router = express.Router();
  *
  * POST /api/products
  */
-router.post("/", productController.createProduct);
+router.post(
+    "/",
+    validate(createProductSchema),
+    productController.createProduct
+);
 
 /**
  * Retrieve all products.
@@ -40,20 +51,33 @@ router.get("/sku/:sku", productController.getProductBySku);
  *
  * GET /api/products/:id
  */
-router.get("/:id", productController.getProductById);
+router.get(
+    "/:id",
+    validate(productIdSchema, "params"),
+    productController.getProductById
+);
 
 /**
  * Update a product.
  *
  * PUT /api/products/:id
  */
-router.put("/:id", productController.updateProduct);
+router.put(
+    "/:id",
+    validate(productIdSchema, "params"),
+    validate(updateProductSchema),
+    productController.updateProduct
+);
 
 /**
  * Delete a product.
  *
  * DELETE /api/products/:id
  */
-router.delete("/:id", productController.deleteProduct);
+router.delete(
+    "/:id",
+    validate(productIdSchema, "params"),
+    productController.deleteProduct
+);
 
 module.exports = router;

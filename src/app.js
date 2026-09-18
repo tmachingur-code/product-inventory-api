@@ -1,9 +1,12 @@
-const notFound = require("./middleware/notFound");
-const errorHandler = require("./middleware/errorHandler");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+
+const productRoutes = require("./routes/productRoutes");
+
+const errorHandler = require("./middleware/errorHandler");
+const notFound = require("./middleware/notFound");
 
 const app = express();
 
@@ -31,6 +34,9 @@ app.get("/", (req, res) => {
         status: "healthy",
     });
 });
+
+// Product routes
+app.use("/api/products", productRoutes);
 
 // Handle unknown routes
 app.use(notFound);

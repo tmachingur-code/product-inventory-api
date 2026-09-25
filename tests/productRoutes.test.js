@@ -1,4 +1,8 @@
+const express = require("express");
 const request = require("supertest");
+const jwt = require("jsonwebtoken");
+
+const env = require("../src/config/env");
 
 const app = require("../src/app");
 const productService = require("../src/services/productService");
@@ -8,6 +12,18 @@ const productService = require("../src/services/productService");
 jest.mock("../src/services/productService");
 
 describe("Product Routes", () => {
+    // Create a valid JWT for protected product routes.
+    const token = jwt.sign(
+        {
+            userId: 1,
+            role: "STAFF",
+        },
+        env.jwtSecret,
+        {
+            expiresIn: "1h",
+        }
+    );
+
     beforeEach(() => {
         // Reset all mocked service functions before every test.
         jest.resetAllMocks();
@@ -32,6 +48,10 @@ describe("Product Routes", () => {
         // Send the HTTP request.
         const response = await request(app)
             .post("/api/products")
+            .set(
+                "Authorization",
+                `Bearer ${token}`
+            )
             .send({
                 name: "Test Laptop",
                 description: "Laptop for route testing",
@@ -182,6 +202,10 @@ describe("Product Routes", () => {
         // Send the HTTP request.
         const response = await request(app)
             .put("/api/products/1")
+            .set(
+                "Authorization",
+                `Bearer ${token}`
+            )
             .send(updateData);
 
         // Verify the HTTP response.
@@ -208,9 +232,12 @@ describe("Product Routes", () => {
         productService.deleteProduct.mockResolvedValue(product);
 
         // Send the HTTP request.
-        const response = await request(app).delete(
-            "/api/products/1"
-        );
+        const response = await request(app)
+            .delete("/api/products/1")
+            .set(
+                "Authorization",
+                `Bearer ${token}`
+            );
 
         // Verify the HTTP response.
         expect(response.statusCode).toBe(200);

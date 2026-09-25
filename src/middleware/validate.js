@@ -16,9 +16,24 @@ const validate = (schema, source = "body") => {
             });
         }
 
-        // Replace the original data with the
-        // validated and transformed data.
-        req[source] = result.data;
+        /**
+         * Replace the request data with the validated
+         * and transformed data.
+         *
+         * Express exposes req.query through a special
+         * property, so directly assigning to req.query
+         * may not replace the parsed query object.
+         *
+         * Defining the property explicitly ensures that
+         * Zod transformations such as z.coerce.number()
+         * are preserved.
+         */
+        Object.defineProperty(req, source, {
+            value: result.data,
+            writable: true,
+            configurable: true,
+            enumerable: true,
+        });
 
         // Continue to the next middleware/controller.
         next();

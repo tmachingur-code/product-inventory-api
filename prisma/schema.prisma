@@ -1,14 +1,26 @@
-// Prisma Client configuration
 generator client {
   provider = "prisma-client-js"
 }
 
-// PostgreSQL database
 datasource db {
   provider = "postgresql"
 }
 
-// Product model
+enum UserRole {
+  STAFF
+  ADMIN
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(STAFF)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Product {
   id                Int      @id @default(autoincrement())
   name              String

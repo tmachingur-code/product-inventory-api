@@ -74,8 +74,85 @@ const productIdSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
+/**
+ * Schema for GET /api/products query parameters.
+ *
+ * Express provides query parameters as strings.
+ * Therefore, page and limit use z.coerce.number()
+ * to convert values such as "2" and "10" into numbers.
+ */
+const productQuerySchema = z.object({
+    /**
+     * Search product names.
+     *
+     * Example:
+     * ?search=laptop
+     */
+    search: z
+        .string()
+        .trim()
+        .min(1, "Search cannot be empty")
+        .optional(),
+
+    /**
+     * Filter products by category.
+     *
+     * Example:
+     * ?category=Electronics
+     */
+    category: z
+        .string()
+        .trim()
+        .min(1, "Category cannot be empty")
+        .optional(),
+
+    /**
+     * Field used to sort products.
+     */
+    sortBy: z
+        .enum([
+            "name",
+            "price",
+            "quantity",
+            "createdAt",
+            "updatedAt",
+        ])
+        .optional(),
+
+    /**
+     * Sorting direction.
+     */
+    order: z
+        .enum(["asc", "desc"])
+        .optional(),
+
+    /**
+     * Page number.
+     *
+     * Must be at least 1.
+     */
+    page: z.coerce
+        .number()
+        .int("Page must be an integer")
+        .min(1, "Page must be at least 1")
+        .optional(),
+
+    /**
+     * Number of products returned per page.
+     *
+     * Must be between 1 and 100.
+     */
+    limit: z.coerce
+        .number()
+        .int("Limit must be an integer")
+        .min(1, "Limit must be at least 1")
+        .max(100, "Limit cannot exceed 100")
+        .optional(),
+});
+
 module.exports = {
     createProductSchema,
     updateProductSchema,
     productIdSchema,
+    productQuerySchema,
 };

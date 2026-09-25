@@ -1,6 +1,14 @@
 module.exports = {
     testEnvironment: "node",
 
+    /**
+     * Run the test setup file after Jest's
+     * testing environment has been initialized.
+     */
+    setupFilesAfterEnv: [
+        "<rootDir>/tests/setup.js",
+    ],
+
     // Store test coverage reports in the coverage folder
     coverageDirectory: "coverage",
 

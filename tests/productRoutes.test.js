@@ -52,7 +52,7 @@ describe("Product Routes", () => {
         });
     });
 
-    test("GET /api/products should return all products", async () => {
+    test("GET /api/products should return paginated products", async () => {
         // Fake products returned by the service.
         const products = [
             {
@@ -71,8 +71,19 @@ describe("Product Routes", () => {
             },
         ];
 
+        // Fake pagination metadata returned by the service.
+        const pagination = {
+            page: 1,
+            limit: 10,
+            total: 2,
+            totalPages: 1,
+        };
+
         // Tell the mocked service what to return.
-        productService.getAllProducts.mockResolvedValue(products);
+        productService.getPaginatedProducts.mockResolvedValue({
+            products,
+            pagination,
+        });
 
         // Send the HTTP request.
         const response = await request(app).get("/api/products");
@@ -80,10 +91,17 @@ describe("Product Routes", () => {
         // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
+        // Verify the service received the validated
+        // default query values.
+        expect(
+            productService.getPaginatedProducts
+        ).toHaveBeenCalledWith({});
+
         // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: products,
+            pagination,
         });
     });
 

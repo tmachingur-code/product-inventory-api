@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const productRoutes = require("./routes/productRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
@@ -34,6 +35,9 @@ app.get("/", (req, res) => {
         status: "healthy",
     });
 });
+
+// Authentication routes
+app.use("/api/auth", authRoutes);
 
 // Product routes
 app.use("/api/products", productRoutes);

@@ -15,16 +15,13 @@ const productService = require("../services/productService");
  */
 const createProduct = async (req, res, next) => {
     try {
-        // Pass the request body to the service layer.
         const product = await productService.createProduct(req.body);
 
-        // Return the newly created product.
         res.status(201).json({
             success: true,
             data: product,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
         next(error);
     }
 };
@@ -33,19 +30,79 @@ const createProduct = async (req, res, next) => {
  * Retrieve all products.
  *
  * GET /api/products
+ *
+ * This method is kept for backward compatibility.
+ * The main route will use getPaginatedProducts()
+ * so that pagination metadata is returned.
  */
 const getAllProducts = async (req, res, next) => {
     try {
-        // Ask the service layer for all products.
-        const products = await productService.getAllProducts();
+        const products = await productService.getAllProducts(
+            req.query
+        );
 
-        // Return the products.
         res.status(200).json({
             success: true,
             data: products,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
+        next(error);
+    }
+};
+
+/**
+ * Retrieve paginated products with metadata.
+ *
+ * GET /api/products
+ *
+ * Supported query parameters:
+ * - search
+ * - category
+ * - sortBy
+ * - order
+ * - page
+ * - limit
+ */
+const getPaginatedProducts = async (req, res, next) => {
+    try {
+        // Pass validated query parameters to the service.
+        const result = await productService.getPaginatedProducts(
+            req.query
+        );
+
+        res.status(200).json({
+            success: true,
+            data: result.products,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getLowStockProducts = async (req, res, next) => {
+    try {
+        const products =
+            await productService.getLowStockProducts();
+
+        res.status(200).json({
+            success: true,
+            data: products,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getInventoryStats = async (req, res, next) => {
+    try {
+        const stats = await productService.getInventoryStats();
+
+        res.status(200).json({
+            success: true,
+            data: stats,
+        });
+    } catch (error) {
         next(error);
     }
 };
@@ -57,19 +114,15 @@ const getAllProducts = async (req, res, next) => {
  */
 const getProductById = async (req, res, next) => {
     try {
-        // Get the product ID from the route parameter.
         const { id } = req.params;
 
-        // Pass the ID to the service layer.
         const product = await productService.getProductById(id);
 
-        // Return the requested product.
         res.status(200).json({
             success: true,
             data: product,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
         next(error);
     }
 };
@@ -81,19 +134,15 @@ const getProductById = async (req, res, next) => {
  */
 const getProductBySku = async (req, res, next) => {
     try {
-        // Get the SKU from the route parameter.
         const { sku } = req.params;
 
-        // Pass the SKU to the service layer.
         const product = await productService.getProductBySku(sku);
 
-        // Return the requested product.
         res.status(200).json({
             success: true,
             data: product,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
         next(error);
     }
 };
@@ -105,22 +154,18 @@ const getProductBySku = async (req, res, next) => {
  */
 const updateProduct = async (req, res, next) => {
     try {
-        // Get the product ID from the route parameter.
         const { id } = req.params;
 
-        // Pass the ID and updated data to the service layer.
         const product = await productService.updateProduct(
             id,
             req.body
         );
 
-        // Return the updated product.
         res.status(200).json({
             success: true,
             data: product,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
         next(error);
     }
 };
@@ -132,19 +177,15 @@ const updateProduct = async (req, res, next) => {
  */
 const deleteProduct = async (req, res, next) => {
     try {
-        // Get the product ID from the route parameter.
         const { id } = req.params;
 
-        // Ask the service layer to delete the product.
         const product = await productService.deleteProduct(id);
 
-        // Return the deleted product.
         res.status(200).json({
             success: true,
             data: product,
         });
     } catch (error) {
-        // Pass errors to the centralized error handler.
         next(error);
     }
 };
@@ -152,6 +193,9 @@ const deleteProduct = async (req, res, next) => {
 module.exports = {
     createProduct,
     getAllProducts,
+    getPaginatedProducts,
+    getLowStockProducts,
+    getInventoryStats,
     getProductById,
     getProductBySku,
     updateProduct,

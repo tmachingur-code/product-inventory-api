@@ -7,6 +7,7 @@ const {
     createProductSchema,
     updateProductSchema,
     productIdSchema,
+    productQuerySchema,
 } = require("../schemas/productSchema");
 
 /**
@@ -30,27 +31,41 @@ router.post(
 );
 
 /**
- * Retrieve all products.
+ * Retrieve paginated products.
  *
  * GET /api/products
+ *
+ * Supported query parameters:
+ * - search
+ * - category
+ * - sortBy
+ * - order
+ * - page
+ * - limit
+ *
+ * The query is validated before reaching the controller.
  */
-router.get("/", productController.getAllProducts);
+router.get(
+    "/",
+    validate(productQuerySchema, "query"),
+    productController.getPaginatedProducts
+);
 
-/**
- * Retrieve a product by SKU.
- *
- * GET /api/products/sku/:sku
- *
- * This route must come before /:id so that
- * "sku" is not interpreted as a product ID.
- */
-router.get("/sku/:sku", productController.getProductBySku);
+router.get(
+    "/low-stock",
+    productController.getLowStockProducts
+);
 
-/**
- * Retrieve a product by ID.
- *
- * GET /api/products/:id
- */
+router.get(
+    "/stats",
+    productController.getInventoryStats
+);
+
+router.get(
+    "/sku/:sku",
+    productController.getProductBySku
+);
+
 router.get(
     "/:id",
     validate(productIdSchema, "params"),

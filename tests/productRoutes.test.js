@@ -12,11 +12,23 @@ const productService = require("../src/services/productService");
 jest.mock("../src/services/productService");
 
 describe("Product Routes", () => {
-    // Create a valid JWT for protected product routes.
-    const token = jwt.sign(
+    // Create a JWT for a STAFF user.
+    const staffToken = jwt.sign(
         {
             userId: 1,
             role: "STAFF",
+        },
+        env.jwtSecret,
+        {
+            expiresIn: "1h",
+        }
+    );
+
+    // Create a JWT for an ADMIN user.
+    const adminToken = jwt.sign(
+        {
+            userId: 2,
+            role: "ADMIN",
         },
         env.jwtSecret,
         {
@@ -30,7 +42,6 @@ describe("Product Routes", () => {
     });
 
     test("POST /api/products should create a product", async () => {
-        // Fake product returned by the service.
         const product = {
             id: 1,
             name: "Test Laptop",
@@ -42,15 +53,13 @@ describe("Product Routes", () => {
             lowStockThreshold: 5,
         };
 
-        // Tell the mocked service what to return.
         productService.createProduct.mockResolvedValue(product);
 
-        // Send the HTTP request.
         const response = await request(app)
             .post("/api/products")
             .set(
                 "Authorization",
-                `Bearer ${token}`
+                `Bearer ${staffToken}`
             )
             .send({
                 name: "Test Laptop",
@@ -62,10 +71,8 @@ describe("Product Routes", () => {
                 lowStockThreshold: 5,
             });
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(201);
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: product,
@@ -73,7 +80,6 @@ describe("Product Routes", () => {
     });
 
     test("GET /api/products should return paginated products", async () => {
-        // Fake products returned by the service.
         const products = [
             {
                 id: 1,
@@ -91,7 +97,6 @@ describe("Product Routes", () => {
             },
         ];
 
-        // Fake pagination metadata returned by the service.
         const pagination = {
             page: 1,
             limit: 10,
@@ -99,25 +104,21 @@ describe("Product Routes", () => {
             totalPages: 1,
         };
 
-        // Tell the mocked service what to return.
         productService.getPaginatedProducts.mockResolvedValue({
             products,
             pagination,
         });
 
-        // Send the HTTP request.
-        const response = await request(app).get("/api/products");
+        const response = await request(app).get(
+            "/api/products"
+        );
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
-        // Verify the service received the validated
-        // default query values.
         expect(
             productService.getPaginatedProducts
         ).toHaveBeenCalledWith({});
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: products,
@@ -126,7 +127,6 @@ describe("Product Routes", () => {
     });
 
     test("GET /api/products/:id should return a product", async () => {
-        // Fake product returned by the service.
         const product = {
             id: 1,
             name: "Test Laptop",
@@ -135,16 +135,14 @@ describe("Product Routes", () => {
             quantity: 10,
         };
 
-        // Tell the mocked service what to return.
         productService.getProductById.mockResolvedValue(product);
 
-        // Send the HTTP request.
-        const response = await request(app).get("/api/products/1");
+        const response = await request(app).get(
+            "/api/products/1"
+        );
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: product,
@@ -152,7 +150,6 @@ describe("Product Routes", () => {
     });
 
     test("GET /api/products/sku/:sku should return a product", async () => {
-        // Fake product returned by the service.
         const product = {
             id: 1,
             name: "Test Laptop",
@@ -161,18 +158,14 @@ describe("Product Routes", () => {
             quantity: 10,
         };
 
-        // Tell the mocked service what to return.
         productService.getProductBySku.mockResolvedValue(product);
 
-        // Send the HTTP request.
         const response = await request(app).get(
             "/api/products/sku/LAP-001"
         );
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: product,
@@ -180,7 +173,6 @@ describe("Product Routes", () => {
     });
 
     test("PUT /api/products/:id should update a product", async () => {
-        // Fake product returned by the service.
         const product = {
             id: 1,
             name: "Updated Laptop",
@@ -189,37 +181,31 @@ describe("Product Routes", () => {
             quantity: 15,
         };
 
-        // Tell the mocked service what to return.
         productService.updateProduct.mockResolvedValue(product);
 
-        // Data sent by the client.
         const updateData = {
             name: "Updated Laptop",
             price: 1099.99,
             quantity: 15,
         };
 
-        // Send the HTTP request.
         const response = await request(app)
             .put("/api/products/1")
             .set(
                 "Authorization",
-                `Bearer ${token}`
+                `Bearer ${staffToken}`
             )
             .send(updateData);
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: product,
         });
     });
 
-    test("DELETE /api/products/:id should delete a product", async () => {
-        // Fake product returned by the service.
+    test("DELETE /api/products/:id should delete a product for an ADMIN user", async () => {
         const product = {
             id: 1,
             name: "Test Laptop",
@@ -228,24 +214,40 @@ describe("Product Routes", () => {
             quantity: 10,
         };
 
-        // Tell the mocked service what to return.
         productService.deleteProduct.mockResolvedValue(product);
 
-        // Send the HTTP request.
         const response = await request(app)
             .delete("/api/products/1")
             .set(
                 "Authorization",
-                `Bearer ${token}`
+                `Bearer ${adminToken}`
             );
 
-        // Verify the HTTP response.
         expect(response.statusCode).toBe(200);
 
-        // Verify the response body.
         expect(response.body).toEqual({
             success: true,
             data: product,
         });
+    });
+
+    test("DELETE /api/products/:id should reject a STAFF user", async () => {
+        const response = await request(app)
+            .delete("/api/products/1")
+            .set(
+                "Authorization",
+                `Bearer ${staffToken}`
+            );
+
+        expect(response.statusCode).toBe(403);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Access forbidden",
+        });
+
+        expect(
+            productService.deleteProduct
+        ).not.toHaveBeenCalled();
     });
 });

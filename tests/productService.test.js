@@ -371,6 +371,54 @@ describe("Product Service", () => {
 
             expect(productRepository.update).not.toHaveBeenCalled();
         });
+
+        test("should allow a product to keep its existing SKU", async () => {
+            const existingProduct = {
+                id: 1,
+                name: "Laptop",
+                sku: "LAPTOP-001",
+            };
+
+            const updateData = {
+                name: "Updated Laptop",
+                sku: "LAPTOP-001",
+            };
+
+            const updatedProduct = {
+                ...existingProduct,
+                ...updateData,
+            };
+
+            productRepository.findById.mockResolvedValue(
+                existingProduct
+            );
+
+            productRepository.findBySku.mockResolvedValue(
+                existingProduct
+            );
+
+            productRepository.update.mockResolvedValue(
+                updatedProduct
+            );
+
+            const result = await productService.updateProduct(
+                "1",
+                updateData
+            );
+
+            expect(productRepository.findById).toHaveBeenCalledWith(1);
+
+            expect(productRepository.findBySku).toHaveBeenCalledWith(
+                "LAPTOP-001"
+            );
+
+            expect(productRepository.update).toHaveBeenCalledWith(
+                1,
+                updateData
+            );
+
+            expect(result).toEqual(updatedProduct);
+        });
     });
 
     describe("deleteProduct", () => {

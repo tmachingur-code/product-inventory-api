@@ -46,7 +46,62 @@ describe("Product Authentication", () => {
         });
     });
 
-    test("should allow product creation with a valid JWT", async () => {
+    test("should reject product creation with an invalid JWT", async () => {
+        const response = await request(app)
+            .post("/api/products")
+            .set(
+                "Authorization",
+                "Bearer invalid.jwt.token"
+            )
+            .send({
+                name: "Test Product",
+                sku: "TEST-002",
+                price: 100,
+                quantity: 10,
+            });
+
+        expect(response.status).toBe(401);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Invalid or expired authentication token",
+        });
+    });
+
+    test("should reject product creation with an expired JWT", async () => {
+        const token = jwt.sign(
+            {
+                userId: 5,
+                role: "STAFF",
+            },
+            env.jwtSecret,
+            {
+                expiresIn: "-1s",
+            }
+        );
+
+        const response = await request(app)
+            .post("/api/products")
+            .set(
+                "Authorization",
+                `Bearer ${token}`
+            )
+            .send({
+                name: "Test Product",
+                sku: "TEST-003",
+                price: 100,
+                quantity: 10,
+            });
+
+        expect(response.status).toBe(401);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Invalid or expired authentication token",
+        });
+    });
+
+    test("should allow product creation with a valid STAFF JWT", async () => {
         const token = jwt.sign(
             {
                 userId: 5,
@@ -66,7 +121,7 @@ describe("Product Authentication", () => {
             )
             .send({
                 name: "Test Product",
-                sku: "TEST-001",
+                sku: "TEST-004",
                 price: 100,
                 quantity: 10,
             });
@@ -79,6 +134,45 @@ describe("Product Authentication", () => {
             user: {
                 userId: 5,
                 role: "STAFF",
+                iat: expect.any(Number),
+                exp: expect.any(Number),
+            },
+        });
+    });
+
+    test("should allow product creation with a valid ADMIN JWT", async () => {
+        const token = jwt.sign(
+            {
+                userId: 10,
+                role: "ADMIN",
+            },
+            env.jwtSecret,
+            {
+                expiresIn: "1h",
+            }
+        );
+
+        const response = await request(app)
+            .post("/api/products")
+            .set(
+                "Authorization",
+                `Bearer ${token}`
+            )
+            .send({
+                name: "Admin Product",
+                sku: "TEST-005",
+                price: 250,
+                quantity: 5,
+            });
+
+        expect(response.status).toBe(201);
+
+        expect(response.body).toEqual({
+            success: true,
+            message: "Product creation authorized",
+            user: {
+                userId: 10,
+                role: "ADMIN",
                 iat: expect.any(Number),
                 exp: expect.any(Number),
             },

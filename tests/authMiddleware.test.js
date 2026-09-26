@@ -58,6 +58,42 @@ describe("Authentication Middleware", () => {
         });
     });
 
+    test("should reject a request when authorization scheme is not Bearer", async () => {
+        const app = createTestApp();
+
+        const response = await request(app)
+            .get("/protected")
+            .set(
+                "Authorization",
+                "Basic abc123"
+            );
+
+        expect(response.status).toBe(401);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Authentication token is required",
+        });
+    });
+
+    test("should reject a request when Bearer token is missing", async () => {
+        const app = createTestApp();
+
+        const response = await request(app)
+            .get("/protected")
+            .set(
+                "Authorization",
+                "Bearer"
+            );
+
+        expect(response.status).toBe(401);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Authentication token is required",
+        });
+    });
+
     test("should reject an invalid JWT", async () => {
         const app = createTestApp();
 

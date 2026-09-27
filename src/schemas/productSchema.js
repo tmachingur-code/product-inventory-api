@@ -59,7 +59,8 @@ const updateProductSchema = z
     .refine(
         (data) => Object.keys(data).length > 0,
         {
-            message: "At least one field must be provided for an update",
+            message:
+                "At least one field must be provided for an update",
         }
     );
 
@@ -76,39 +77,20 @@ const productIdSchema = z.object({
 
 /**
  * Schema for GET /api/products query parameters.
- *
- * Express provides query parameters as strings.
- * Therefore, page and limit use z.coerce.number()
- * to convert values such as "2" and "10" into numbers.
  */
 const productQuerySchema = z.object({
-    /**
-     * Search product names.
-     *
-     * Example:
-     * ?search=laptop
-     */
     search: z
         .string()
         .trim()
         .min(1, "Search cannot be empty")
         .optional(),
 
-    /**
-     * Filter products by category.
-     *
-     * Example:
-     * ?category=Electronics
-     */
     category: z
         .string()
         .trim()
         .min(1, "Category cannot be empty")
         .optional(),
 
-    /**
-     * Field used to sort products.
-     */
     sortBy: z
         .enum([
             "name",
@@ -119,29 +101,16 @@ const productQuerySchema = z.object({
         ])
         .optional(),
 
-    /**
-     * Sorting direction.
-     */
     order: z
         .enum(["asc", "desc"])
         .optional(),
 
-    /**
-     * Page number.
-     *
-     * Must be at least 1.
-     */
     page: z.coerce
         .number()
         .int("Page must be an integer")
         .min(1, "Page must be at least 1")
         .optional(),
 
-    /**
-     * Number of products returned per page.
-     *
-     * Must be between 1 and 100.
-     */
     limit: z.coerce
         .number()
         .int("Limit must be an integer")
@@ -150,9 +119,32 @@ const productQuerySchema = z.object({
         .optional(),
 });
 
+/**
+ * Schema for adjusting product stock.
+ *
+ * Positive value:
+ *     Adds stock.
+ *
+ * Negative value:
+ *     Removes stock.
+ *
+ * Zero is not allowed because it does not
+ * represent an actual inventory adjustment.
+ */
+const stockAdjustmentSchema = z.object({
+    quantityDelta: z
+        .number()
+        .int("Stock adjustment must be an integer")
+        .refine(
+            (value) => value !== 0,
+            "Stock adjustment cannot be zero"
+        ),
+});
+
 module.exports = {
     createProductSchema,
     updateProductSchema,
     productIdSchema,
     productQuerySchema,
+    stockAdjustmentSchema,
 };

@@ -8,6 +8,7 @@ const validate = require("../middleware/validate");
 const {
     createProductSchema,
     updateProductSchema,
+    stockAdjustmentSchema,
     productIdSchema,
     productQuerySchema,
 } = require("../schemas/productSchema");
@@ -93,7 +94,7 @@ router.post(
  *         name: search
  *         schema:
  *           type: string
- *         description: Search products by name or SKU.
+ *         description: Search products by name.
  *         example: laptop
  *       - in: query
  *         name: category
@@ -179,6 +180,58 @@ router.get(
 router.get(
     "/stats",
     productController.getInventoryStats
+);
+
+/**
+ * @swagger
+ * /api/products/{id}/stock:
+ *   post:
+ *     summary: Adjust product stock
+ *     description: Increases or decreases product stock. Requires authentication and STAFF or ADMIN role.
+ *     tags:
+ *       - Products
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quantityDelta
+ *             properties:
+ *               quantityDelta:
+ *                 type: integer
+ *                 example: -3
+ *                 description: Positive values add stock. Negative values remove stock. Zero is not allowed.
+ *     responses:
+ *       200:
+ *         description: Product stock adjusted successfully
+ *       400:
+ *         description: Invalid adjustment or insufficient stock
+ *       401:
+ *         description: Authentication token is required or invalid
+ *       403:
+ *         description: Access forbidden
+ *       404:
+ *         description: Product not found
+ */
+router.post(
+    "/:id/stock",
+    authMiddleware,
+    roleMiddleware("STAFF", "ADMIN"),
+    validate(productIdSchema, "params"),
+    validate(stockAdjustmentSchema),
+    productController.adjustStock
 );
 
 /**

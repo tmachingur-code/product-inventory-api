@@ -35,12 +35,8 @@ const productRepository = {
             limit,
         } = options;
 
-        // Build the database filtering conditions.
         const where = {};
 
-        /**
-         * Search product names.
-         */
         if (search) {
             where.name = {
                 contains: search,
@@ -48,9 +44,6 @@ const productRepository = {
             };
         }
 
-        /**
-         * Filter products by category.
-         */
         if (category) {
             where.category = {
                 equals: category,
@@ -58,9 +51,6 @@ const productRepository = {
             };
         }
 
-        /**
-         * Only allow known sortable fields.
-         */
         const allowedSortFields = [
             "name",
             "price",
@@ -73,9 +63,6 @@ const productRepository = {
             ? sortBy
             : "createdAt";
 
-        /**
-         * Only allow ascending or descending order.
-         */
         const safeOrder = order === "asc" ? "asc" : "desc";
 
         const queryOptions = {
@@ -85,9 +72,6 @@ const productRepository = {
             },
         };
 
-        /**
-         * Apply pagination only when a limit is provided.
-         */
         if (limit !== undefined) {
             const safePage = Math.max(Number(page) || 1, 1);
             const safeLimit = Math.max(Number(limit) || 1, 1);
@@ -101,10 +85,6 @@ const productRepository = {
 
     /**
      * Retrieve products with pagination metadata.
-     *
-     * Returns:
-     * - products: products on the requested page
-     * - total: total number of matching products
      */
     async findAllPaginated(options = {}) {
         const {
@@ -116,12 +96,8 @@ const productRepository = {
             limit = 10,
         } = options;
 
-        // Build the database filtering conditions.
         const where = {};
 
-        /**
-         * Search product names.
-         */
         if (search) {
             where.name = {
                 contains: search,
@@ -129,9 +105,6 @@ const productRepository = {
             };
         }
 
-        /**
-         * Filter products by category.
-         */
         if (category) {
             where.category = {
                 equals: category,
@@ -139,9 +112,6 @@ const productRepository = {
             };
         }
 
-        /**
-         * Only allow known sortable fields.
-         */
         const allowedSortFields = [
             "name",
             "price",
@@ -154,28 +124,13 @@ const productRepository = {
             ? sortBy
             : "createdAt";
 
-        /**
-         * Only allow ascending or descending order.
-         */
         const safeOrder = order === "asc" ? "asc" : "desc";
 
-        /**
-         * Convert pagination values to safe numbers.
-         */
         const safePage = Math.max(Number(page) || 1, 1);
         const safeLimit = Math.max(Number(limit) || 1, 1);
 
         const skip = (safePage - 1) * safeLimit;
 
-        /**
-         * Run both database queries.
-         *
-         * findMany() retrieves the products for the
-         * requested page.
-         *
-         * count() retrieves the total number of
-         * products matching the filters.
-         */
         const [products, total] = await Promise.all([
             prisma.product.findMany({
                 where,
@@ -199,17 +154,6 @@ const productRepository = {
 
     /**
      * Retrieve products that are low in stock.
-     *
-     * A product is considered low stock when its
-     * quantity is less than or equal to its
-     * configured low-stock threshold.
-     *
-     * Example:
-     *
-     * quantity = 3
-     * lowStockThreshold = 5
-     *
-     * 3 <= 5 → low stock
      */
     async findLowStock() {
         return prisma.$queryRaw`
@@ -220,17 +164,8 @@ const productRepository = {
         `;
     },
 
-        /**
+    /**
      * Retrieve inventory statistics.
-     *
-     * Calculates:
-     * - Total number of products
-     * - Total quantity of products in stock
-     * - Number of low-stock products
-     * - Total inventory value
-     *
-     * PostgreSQL performs the price × quantity
-     * calculation directly in the database.
      */
     async getInventoryStats() {
         const result = await prisma.$queryRaw`
@@ -259,12 +194,65 @@ const productRepository = {
     },
 
     /**
+     * Atomically adjust product stock.
+     *
+     * Positive quantityDelta increases stock.
+     *
+     * Negative quantityDelta decreases stock,
+     * but only when enough stock is available.
+     *
+     * updateMany() is used for the decrement condition
+     * so the database prevents the quantity from becoming
+     * negative during concurrent requests.
+     */
+    async adjustStock(id, quantityDelta) {
+        if (quantityDelta > 0) {
+            await prisma.product.updateMany({
+                where: {
+                    id,
+                },
+                data: {
+                    quantity: {
+                        increment: quantityDelta,
+                    },
+                },
+            });
+        } else {
+            const amountToRemove = Math.abs(quantityDelta);
+
+            const result = await prisma.product.updateMany({
+                where: {
+                    id,
+                    quantity: {
+                        gte: amountToRemove,
+                    },
+                },
+                data: {
+                    quantity: {
+                        decrement: amountToRemove,
+                    },
+                },
+            });
+
+            if (result.count === 0) {
+                return null;
+            }
+        }
+
+        return prisma.product.findUnique({
+            where: {
+                id,
+            },
+        });
+    },
+
+    /**
      * Find a product by its ID.
      */
     async findById(id) {
         return prisma.product.findUnique({
             where: {
-                id: id,
+                id,
             },
         });
     },
@@ -275,7 +263,7 @@ const productRepository = {
     async findBySku(sku) {
         return prisma.product.findUnique({
             where: {
-                sku: sku,
+                sku,
             },
         });
     },
@@ -286,7 +274,7 @@ const productRepository = {
     async update(id, productData) {
         return prisma.product.update({
             where: {
-                id: id,
+                id,
             },
             data: productData,
         });
@@ -298,7 +286,7 @@ const productRepository = {
     async delete(id) {
         return prisma.product.delete({
             where: {
-                id: id,
+                id,
             },
         });
     },

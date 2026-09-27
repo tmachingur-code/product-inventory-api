@@ -15,7 +15,8 @@ const productService = require("../services/productService");
  */
 const createProduct = async (req, res, next) => {
     try {
-        const product = await productService.createProduct(req.body);
+        const product =
+            await productService.createProduct(req.body);
 
         res.status(201).json({
             success: true,
@@ -28,18 +29,11 @@ const createProduct = async (req, res, next) => {
 
 /**
  * Retrieve all products.
- *
- * GET /api/products
- *
- * This method is kept for backward compatibility.
- * The main route will use getPaginatedProducts()
- * so that pagination metadata is returned.
  */
 const getAllProducts = async (req, res, next) => {
     try {
-        const products = await productService.getAllProducts(
-            req.query
-        );
+        const products =
+            await productService.getAllProducts(req.query);
 
         res.status(200).json({
             success: true,
@@ -52,23 +46,13 @@ const getAllProducts = async (req, res, next) => {
 
 /**
  * Retrieve paginated products with metadata.
- *
- * GET /api/products
- *
- * Supported query parameters:
- * - search
- * - category
- * - sortBy
- * - order
- * - page
- * - limit
  */
 const getPaginatedProducts = async (req, res, next) => {
     try {
-        // Pass validated query parameters to the service.
-        const result = await productService.getPaginatedProducts(
-            req.query
-        );
+        const result =
+            await productService.getPaginatedProducts(
+                req.query
+            );
 
         res.status(200).json({
             success: true,
@@ -80,6 +64,9 @@ const getPaginatedProducts = async (req, res, next) => {
     }
 };
 
+/**
+ * Retrieve low-stock products.
+ */
 const getLowStockProducts = async (req, res, next) => {
     try {
         const products =
@@ -94,9 +81,13 @@ const getLowStockProducts = async (req, res, next) => {
     }
 };
 
+/**
+ * Retrieve inventory statistics.
+ */
 const getInventoryStats = async (req, res, next) => {
     try {
-        const stats = await productService.getInventoryStats();
+        const stats =
+            await productService.getInventoryStats();
 
         res.status(200).json({
             success: true,
@@ -108,15 +99,39 @@ const getInventoryStats = async (req, res, next) => {
 };
 
 /**
- * Retrieve a product by its ID.
+ * Adjust product stock.
  *
- * GET /api/products/:id
+ * POST /api/products/:id/stock
+ */
+const adjustStock = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { quantityDelta } = req.body;
+
+        const product =
+            await productService.adjustStock(
+                id,
+                quantityDelta
+            );
+
+        res.status(200).json({
+            success: true,
+            data: product,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Retrieve a product by its ID.
  */
 const getProductById = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const product = await productService.getProductById(id);
+        const product =
+            await productService.getProductById(id);
 
         res.status(200).json({
             success: true,
@@ -129,14 +144,13 @@ const getProductById = async (req, res, next) => {
 
 /**
  * Retrieve a product by its SKU.
- *
- * GET /api/products/sku/:sku
  */
 const getProductBySku = async (req, res, next) => {
     try {
         const { sku } = req.params;
 
-        const product = await productService.getProductBySku(sku);
+        const product =
+            await productService.getProductBySku(sku);
 
         res.status(200).json({
             success: true,
@@ -149,17 +163,16 @@ const getProductBySku = async (req, res, next) => {
 
 /**
  * Update a product by its ID.
- *
- * PUT /api/products/:id
  */
 const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const product = await productService.updateProduct(
-            id,
-            req.body
-        );
+        const product =
+            await productService.updateProduct(
+                id,
+                req.body
+            );
 
         res.status(200).json({
             success: true,
@@ -172,14 +185,13 @@ const updateProduct = async (req, res, next) => {
 
 /**
  * Delete a product by its ID.
- *
- * DELETE /api/products/:id
  */
 const deleteProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const product = await productService.deleteProduct(id);
+        const product =
+            await productService.deleteProduct(id);
 
         res.status(200).json({
             success: true,
@@ -196,6 +208,7 @@ module.exports = {
     getPaginatedProducts,
     getLowStockProducts,
     getInventoryStats,
+    adjustStock,
     getProductById,
     getProductBySku,
     updateProduct,

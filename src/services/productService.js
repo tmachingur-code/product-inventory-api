@@ -10,20 +10,18 @@ const productRepository = require("../repositories/productRepository");
 const productService = {
     /**
      * Create a new product.
-     *
-     * Checks whether the SKU already exists before
-     * creating the product.
      */
     async createProduct(productData) {
-        const existingProduct = await productRepository.findBySku(
-            productData.sku
-        );
+        const existingProduct =
+            await productRepository.findBySku(productData.sku);
 
         if (existingProduct) {
             const error = new Error(
                 "A product with this SKU already exists"
             );
+
             error.statusCode = 409;
+
             throw error;
         }
 
@@ -32,9 +30,6 @@ const productService = {
 
     /**
      * Retrieve products.
-     *
-     * Query options such as search, category, sorting,
-     * and pagination are passed to the repository.
      */
     async getAllProducts(options = {}) {
         return productRepository.findAll(options);
@@ -42,14 +37,6 @@ const productService = {
 
     /**
      * Retrieve paginated products with metadata.
-     *
-     * The repository returns the products for the
-     * requested page and the total number of matching
-     * products.
-     *
-     * The service calculates totalPages because this
-     * is business/application logic rather than
-     * database logic.
      */
     async getPaginatedProducts(options = {}) {
         const {
@@ -57,11 +44,12 @@ const productService = {
             limit = 10,
         } = options;
 
-        const result = await productRepository.findAllPaginated(
-            options
-        );
+        const result =
+            await productRepository.findAllPaginated(options);
 
-        const totalPages = Math.ceil(result.total / limit);
+        const totalPages = Math.ceil(
+            result.total / limit
+        );
 
         return {
             products: result.products,
@@ -74,24 +62,85 @@ const productService = {
         };
     },
 
-        /**
-     * Retrieve products that are low in stock.
-     *
-     * The repository determines which products
-     * meet the low-stock condition.
+    /**
+     * Retrieve low-stock products.
      */
     async getLowStockProducts() {
         return productRepository.findLowStock();
     },
 
-        /**
+    /**
      * Retrieve inventory statistics.
-     *
-     * The repository performs the database calculations
-     * and returns the aggregated inventory information.
      */
     async getInventoryStats() {
         return productRepository.getInventoryStats();
+    },
+
+    /**
+     * Adjust product stock.
+     *
+     * Positive quantityDelta adds stock.
+     *
+     * Negative quantityDelta removes stock.
+     *
+     * The service validates the business rules before
+     * asking the repository to modify the database.
+     */
+    async adjustStock(id, quantityDelta) {
+        const productId = Number(id);
+
+        if (quantityDelta === 0) {
+            const error = new Error(
+                "Stock adjustment cannot be zero"
+            );
+
+            error.statusCode = 400;
+
+            throw error;
+        }
+
+        const product =
+            await productRepository.findById(productId);
+
+        if (!product) {
+            const error = new Error("Product not found");
+
+            error.statusCode = 404;
+
+            throw error;
+        }
+
+        if (
+            quantityDelta < 0 &&
+            product.quantity + quantityDelta < 0
+        ) {
+            const error = new Error("Insufficient stock");
+
+            error.statusCode = 400;
+
+            throw error;
+        }
+
+        const updatedProduct =
+            await productRepository.adjustStock(
+                productId,
+                quantityDelta
+            );
+
+        /**
+         * The conditional database update may fail if
+         * another request changes the stock between the
+         * initial check and the update.
+         */
+        if (!updatedProduct) {
+            const error = new Error("Insufficient stock");
+
+            error.statusCode = 400;
+
+            throw error;
+        }
+
+        return updatedProduct;
     },
 
     /**
@@ -99,11 +148,15 @@ const productService = {
      */
     async getProductById(id) {
         const productId = Number(id);
-        const product = await productRepository.findById(productId);
+
+        const product =
+            await productRepository.findById(productId);
 
         if (!product) {
             const error = new Error("Product not found");
+
             error.statusCode = 404;
+
             throw error;
         }
 
@@ -114,11 +167,14 @@ const productService = {
      * Retrieve a product by its SKU.
      */
     async getProductBySku(sku) {
-        const product = await productRepository.findBySku(sku);
+        const product =
+            await productRepository.findBySku(sku);
 
         if (!product) {
             const error = new Error("Product not found");
+
             error.statusCode = 404;
+
             throw error;
         }
 
@@ -131,29 +187,41 @@ const productService = {
     async updateProduct(id, productData) {
         const productId = Number(id);
 
-        const product = await productRepository.findById(productId);
+        const product =
+            await productRepository.findById(productId);
 
         if (!product) {
             const error = new Error("Product not found");
+
             error.statusCode = 404;
+
             throw error;
         }
 
         if (productData.sku) {
-            const existingProduct = await productRepository.findBySku(
-                productData.sku
-            );
+            const existingProduct =
+                await productRepository.findBySku(
+                    productData.sku
+                );
 
-            if (existingProduct && existingProduct.id !== productId) {
+            if (
+                existingProduct &&
+                existingProduct.id !== productId
+            ) {
                 const error = new Error(
                     "A product with this SKU already exists"
                 );
+
                 error.statusCode = 409;
+
                 throw error;
             }
         }
 
-        return productRepository.update(productId, productData);
+        return productRepository.update(
+            productId,
+            productData
+        );
     },
 
     /**
@@ -162,11 +230,14 @@ const productService = {
     async deleteProduct(id) {
         const productId = Number(id);
 
-        const product = await productRepository.findById(productId);
+        const product =
+            await productRepository.findById(productId);
 
         if (!product) {
             const error = new Error("Product not found");
+
             error.statusCode = 404;
+
             throw error;
         }
 

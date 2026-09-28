@@ -8,7 +8,7 @@ const options = {
             title: "Product Inventory API",
             version: "1.0.0",
             description:
-                "RESTful API for managing products, inventory, authentication, and stock information.",
+                "RESTful API for managing products, inventory, authentication, and user management.",
         },
 
         servers: [
@@ -23,6 +23,11 @@ const options = {
                 name: "Authentication",
                 description:
                     "User registration and authentication",
+            },
+            {
+                name: "Users",
+                description:
+                    "User management and role administration",
             },
             {
                 name: "Products",
@@ -60,8 +65,26 @@ const options = {
                         },
                         role: {
                             type: "string",
-                            enum: ["STAFF", "ADMIN"],
+                            enum: [
+                                "STAFF",
+                                "ADMIN",
+                            ],
                             example: "STAFF",
+                        },
+                    },
+                },
+
+                UpdateUserRole: {
+                    type: "object",
+                    required: ["role"],
+                    properties: {
+                        role: {
+                            type: "string",
+                            enum: [
+                                "STAFF",
+                                "ADMIN",
+                            ],
+                            example: "ADMIN",
                         },
                     },
                 },

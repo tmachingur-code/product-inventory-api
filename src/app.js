@@ -10,6 +10,7 @@ const swaggerSpec = require("./docs/swagger");
 
 const productRoutes = require("./routes/productRoutes");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
@@ -57,6 +58,10 @@ app.use(
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+
+// User management routes
+app.use("/api/users", userRoutes);
+
 
 // Product routes
 app.use("/api/products", productRoutes);

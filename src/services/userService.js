@@ -5,28 +5,31 @@ const env = require("../config/env");
 const userRepository = require("../repositories/userRepository");
 
 /**
- * User Service
+ * Remove sensitive information before returning
+ * a user to the controller.
  *
- * The service layer contains authentication business logic.
- *
- * Responsibilities:
- * - Check whether an email already exists
- * - Hash passwords
- * - Verify passwords
- * - Generate JWT tokens
- * - Prepare safe user data
- * - Communicate with the user repository
+ * Password hashes must never be exposed through
+ * the API response.
  */
+const sanitizeUser = (user) => {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+    };
+};
+
 const userService = {
     /**
      * Register a new user.
      */
     async registerUser(userData) {
-        const existingUser = await userRepository.findByEmail(
-            userData.email
-        );
+        const existingUser =
+            await userRepository.findByEmail(
+                userData.email
+            );
 
-        // Prevent duplicate accounts.
         if (existingUser) {
             const error = new Error(
                 "A user with this email already exists"
@@ -37,52 +40,34 @@ const userService = {
             throw error;
         }
 
-        // Hash the plain-text password before storing it.
         const passwordHash = await bcrypt.hash(
             userData.password,
             12
         );
 
-        // Never send the plain-text password to the repository.
         const newUserData = {
             name: userData.name,
             email: userData.email,
             passwordHash,
         };
 
-        const createdUser = await userRepository.create(
-            newUserData
-        );
+        const createdUser =
+            await userRepository.create(
+                newUserData
+            );
 
-        /**
-         * Return only safe user information.
-         *
-         * The password hash must never be exposed
-         * through the API response.
-         */
-        return {
-            id: createdUser.id,
-            name: createdUser.name,
-            email: createdUser.email,
-            role: createdUser.role,
-        };
+        return sanitizeUser(createdUser);
     },
 
     /**
-     * Authenticate a user with email and password.
+     * Authenticate a user and return a JWT.
      */
     async loginUser(credentials) {
-        const user = await userRepository.findByEmail(
-            credentials.email
-        );
+        const user =
+            await userRepository.findByEmail(
+                credentials.email
+            );
 
-        /**
-         * Use the same authentication error when the
-         * email does not exist or the password is wrong.
-         *
-         * This avoids revealing whether an email address
-         * is registered in the system.
-         */
         if (!user) {
             const error = new Error(
                 "Invalid email or password"
@@ -93,11 +78,11 @@ const userService = {
             throw error;
         }
 
-        // Compare the supplied password with the stored hash.
-        const passwordMatches = await bcrypt.compare(
-            credentials.password,
-            user.passwordHash
-        );
+        const passwordMatches =
+            await bcrypt.compare(
+                credentials.password,
+                user.passwordHash
+            );
 
         if (!passwordMatches) {
             const error = new Error(
@@ -109,12 +94,6 @@ const userService = {
             throw error;
         }
 
-        /**
-         * Create a JWT containing only the information
-         * needed to identify and authorize the user.
-         *
-         * Never put the password or password hash in the token.
-         */
         const token = jwt.sign(
             {
                 userId: user.id,
@@ -126,20 +105,72 @@ const userService = {
             }
         );
 
-        /**
-         * Return the token together with safe user data.
-         *
-         * The password hash is intentionally excluded.
-         */
         return {
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            },
+            user: sanitizeUser(user),
             token,
         };
+    },
+
+    /**
+     * Return all users without password hashes.
+     */
+    async getAllUsers() {
+        const users =
+            await userRepository.findAll();
+
+        return users.map(sanitizeUser);
+    },
+
+    /**
+     * Return one user by ID without password hash.
+     */
+    async getUserById(id) {
+        const userId = Number(id);
+
+        const user =
+            await userRepository.findById(userId);
+
+        if (!user) {
+            const error = new Error(
+                "User not found"
+            );
+
+            error.statusCode = 404;
+
+            throw error;
+        }
+
+        return sanitizeUser(user);
+    },
+
+    /**
+     * Update a user's role.
+     *
+     * Only ADMIN and STAFF are valid roles.
+     */
+    async updateUserRole(id, role) {
+        const userId = Number(id);
+
+        const user =
+            await userRepository.findById(userId);
+
+        if (!user) {
+            const error = new Error(
+                "User not found"
+            );
+
+            error.statusCode = 404;
+
+            throw error;
+        }
+
+        const updatedUser =
+            await userRepository.updateRole(
+                userId,
+                role
+            );
+
+        return sanitizeUser(updatedUser);
     },
 };
 

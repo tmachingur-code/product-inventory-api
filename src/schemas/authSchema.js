@@ -1,9 +1,7 @@
 const { z } = require("zod");
 
 /**
- * Schema for user registration.
- *
- * Validates the data required to create a new account.
+ * User registration validation.
  */
 const registerUserSchema = z.object({
     name: z
@@ -25,9 +23,7 @@ const registerUserSchema = z.object({
 });
 
 /**
- * Schema for user login.
- *
- * Only email and password are required.
+ * User login validation.
  */
 const loginUserSchema = z.object({
     email: z
@@ -43,7 +39,37 @@ const loginUserSchema = z.object({
         ),
 });
 
+/**
+ * Validate a user ID in a URL parameter.
+ *
+ * Example:
+ * /api/users/5
+ */
+const userIdSchema = z.object({
+    id: z.coerce
+        .number()
+        .int("User ID must be an integer")
+        .positive("User ID must be greater than 0"),
+});
+
+/**
+ * Validate a role update request.
+ *
+ * Only STAFF and ADMIN are valid roles.
+ */
+const updateUserRoleSchema = z.object({
+    role: z.enum(
+        ["STAFF", "ADMIN"],
+        {
+            message:
+                "Role must be either STAFF or ADMIN",
+        }
+    ),
+});
+
 module.exports = {
     registerUserSchema,
     loginUserSchema,
+    userIdSchema,
+    updateUserRoleSchema,
 };

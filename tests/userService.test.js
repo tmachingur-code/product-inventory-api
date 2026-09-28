@@ -34,7 +34,9 @@ describe("User Service", () => {
             const user =
                 await userService.registerUser(userData);
 
-            expect(userRepository.create).toHaveBeenCalledTimes(1);
+            expect(
+                userRepository.create
+            ).toHaveBeenCalledTimes(1);
 
             const createArgument =
                 userRepository.create.mock.calls[0][0];
@@ -43,11 +45,13 @@ describe("User Service", () => {
                 "password"
             );
 
-            expect(createArgument.passwordHash).toBeDefined();
+            expect(
+                createArgument.passwordHash
+            ).toBeDefined();
 
-            expect(createArgument.passwordHash).not.toBe(
-                userData.password
-            );
+            expect(
+                createArgument.passwordHash
+            ).not.toBe(userData.password);
 
             const passwordMatches = await bcrypt.compare(
                 userData.password,
@@ -178,6 +182,145 @@ describe("User Service", () => {
                 email: "john@example.com",
                 role: "STAFF",
             });
+        });
+    });
+
+    describe("getAllUsers", () => {
+        test("should return users without password hashes", async () => {
+            userRepository.findAll.mockResolvedValue([
+                {
+                    id: 1,
+                    name: "John Doe",
+                    email: "john@example.com",
+                    passwordHash: "secret-hash",
+                    role: "STAFF",
+                },
+                {
+                    id: 2,
+                    name: "Jane Doe",
+                    email: "jane@example.com",
+                    passwordHash: "another-secret",
+                    role: "ADMIN",
+                },
+            ]);
+
+            const result =
+                await userService.getAllUsers();
+
+            expect(result).toEqual([
+                {
+                    id: 1,
+                    name: "John Doe",
+                    email: "john@example.com",
+                    role: "STAFF",
+                },
+                {
+                    id: 2,
+                    name: "Jane Doe",
+                    email: "jane@example.com",
+                    role: "ADMIN",
+                },
+            ]);
+
+            expect(
+                userRepository.findAll
+            ).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("getUserById", () => {
+        test("should return a user without password hash", async () => {
+            userRepository.findById.mockResolvedValue({
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                passwordHash: "secret-hash",
+                role: "STAFF",
+            });
+
+            const result =
+                await userService.getUserById(1);
+
+            expect(result).toEqual({
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                role: "STAFF",
+            });
+
+            expect(
+                userRepository.findById
+            ).toHaveBeenCalledWith(1);
+        });
+
+        test("should throw 404 when user does not exist", async () => {
+            userRepository.findById.mockResolvedValue(null);
+
+            await expect(
+                userService.getUserById(999)
+            ).rejects.toMatchObject({
+                message: "User not found",
+                statusCode: 404,
+            });
+
+            expect(
+                userRepository.findById
+            ).toHaveBeenCalledWith(999);
+        });
+    });
+
+    describe("updateUserRole", () => {
+        test("should update a user's role", async () => {
+            userRepository.findById.mockResolvedValue({
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                passwordHash: "secret-hash",
+                role: "STAFF",
+            });
+
+            userRepository.updateRole.mockResolvedValue({
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                passwordHash: "secret-hash",
+                role: "ADMIN",
+            });
+
+            const result =
+                await userService.updateUserRole(
+                    1,
+                    "ADMIN"
+                );
+
+            expect(
+                userRepository.updateRole
+            ).toHaveBeenCalledWith(1, "ADMIN");
+
+            expect(result).toEqual({
+                id: 1,
+                name: "John Doe",
+                email: "john@example.com",
+                role: "ADMIN",
+            });
+        });
+
+        test("should throw 404 when updating a nonexistent user", async () => {
+            userRepository.findById.mockResolvedValue(null);
+
+            await expect(
+                userService.updateUserRole(
+                    999,
+                    "ADMIN"
+                )
+            ).rejects.toMatchObject({
+                message: "User not found",
+                statusCode: 404,
+            });
+
+            expect(
+                userRepository.updateRole
+            ).not.toHaveBeenCalled();
         });
     });
 });

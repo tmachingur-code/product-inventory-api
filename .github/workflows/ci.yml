@@ -18,6 +18,24 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/product_inventory_test
       JWT_SECRET: test-secret
 
+    services:
+      postgres:
+        image: postgres:18-alpine
+
+        env:
+          POSTGRES_DB: product_inventory_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U postgres -d product_inventory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,6 +51,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
 
       - name: Run tests
         run: npm test

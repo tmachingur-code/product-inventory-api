@@ -112,6 +112,35 @@ describe("Authentication Middleware", () => {
         });
     });
 
+    test("should reject a JWT signed with the wrong secret", async () => {
+    const app = createTestApp();
+
+    const token = jwt.sign(
+        {
+            userId: 5,
+            role: "STAFF",
+        },
+        "wrong-secret",
+        {
+            expiresIn: "1h",
+        }
+    );
+
+    const response = await request(app)
+        .get("/protected")
+        .set(
+            "Authorization",
+            `Bearer ${token}`
+        );
+
+    expect(response.status).toBe(401);
+
+    expect(response.body).toEqual({
+        success: false,
+        message: "Invalid or expired authentication token",
+    });
+});
+
     test("should reject an expired JWT", async () => {
         const app = createTestApp();
 

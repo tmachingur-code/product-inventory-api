@@ -13,6 +13,11 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
 
+    env:
+    NODE_ENV: test
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/product_inventory_test
+    JWT_SECRET: test-secret
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,3 +52,5 @@ jobs:
           context: .
           push: false
           tags: product-inventory-api:ci
+        
+      

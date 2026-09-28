@@ -42,6 +42,8 @@ const options = {
                     type: "http",
                     scheme: "bearer",
                     bearerFormat: "JWT",
+                    description:
+                        "Enter a valid JWT token. Example: Bearer eyJhbGciOiJIUzI1NiIs...",
                 },
             },
 
@@ -70,6 +72,88 @@ const options = {
                                 "ADMIN",
                             ],
                             example: "STAFF",
+                        },
+                        createdAt: {
+                            type: "string",
+                            format: "date-time",
+                        },
+                        updatedAt: {
+                            type: "string",
+                            format: "date-time",
+                        },
+                    },
+                },
+
+                RegisterUser: {
+                    type: "object",
+                    required: [
+                        "name",
+                        "email",
+                        "password",
+                    ],
+                    properties: {
+                        name: {
+                            type: "string",
+                            minLength: 2,
+                            example: "John Doe",
+                        },
+                        email: {
+                            type: "string",
+                            format: "email",
+                            example:
+                                "john@example.com",
+                        },
+                        password: {
+                            type: "string",
+                            format: "password",
+                            minLength: 8,
+                            example:
+                                "StrongPassword123!",
+                        },
+                    },
+                },
+
+                LoginUser: {
+                    type: "object",
+                    required: [
+                        "email",
+                        "password",
+                    ],
+                    properties: {
+                        email: {
+                            type: "string",
+                            format: "email",
+                            example:
+                                "john@example.com",
+                        },
+                        password: {
+                            type: "string",
+                            format: "password",
+                            example:
+                                "StrongPassword123!",
+                        },
+                    },
+                },
+
+                AuthResponse: {
+                    type: "object",
+                    properties: {
+                        success: {
+                            type: "boolean",
+                            example: true,
+                        },
+                        data: {
+                            type: "object",
+                            properties: {
+                                user: {
+                                    $ref: "#/components/schemas/User",
+                                },
+                                token: {
+                                    type: "string",
+                                    example:
+                                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                },
+                            },
                         },
                     },
                 },
@@ -113,10 +197,12 @@ const options = {
                         price: {
                             type: "number",
                             format: "double",
+                            minimum: 0,
                             example: 999.99,
                         },
                         quantity: {
                             type: "integer",
+                            minimum: 0,
                             example: 10,
                         },
                         category: {
@@ -126,6 +212,7 @@ const options = {
                         },
                         lowStockThreshold: {
                             type: "integer",
+                            minimum: 0,
                             example: 5,
                         },
                         createdAt: {
@@ -135,6 +222,141 @@ const options = {
                         updatedAt: {
                             type: "string",
                             format: "date-time",
+                        },
+                    },
+                },
+
+                CreateProduct: {
+                    type: "object",
+                    required: [
+                        "name",
+                        "sku",
+                        "price",
+                    ],
+                    properties: {
+                        name: {
+                            type: "string",
+                            example: "Laptop",
+                        },
+                        description: {
+                            type: "string",
+                            example:
+                                "Business laptop",
+                        },
+                        sku: {
+                            type: "string",
+                            example: "LAP-001",
+                        },
+                        price: {
+                            type: "number",
+                            format: "double",
+                            minimum: 0,
+                            example: 999.99,
+                        },
+                        quantity: {
+                            type: "integer",
+                            minimum: 0,
+                            example: 10,
+                        },
+                        category: {
+                            type: "string",
+                            example: "Electronics",
+                        },
+                        lowStockThreshold: {
+                            type: "integer",
+                            minimum: 0,
+                            example: 5,
+                        },
+                    },
+                },
+
+                UpdateProduct: {
+                    type: "object",
+                    properties: {
+                        name: {
+                            type: "string",
+                            example: "Updated Laptop",
+                        },
+                        description: {
+                            type: "string",
+                            nullable: true,
+                            example:
+                                "Updated description",
+                        },
+                        price: {
+                            type: "number",
+                            format: "double",
+                            minimum: 0,
+                            example: 1099.99,
+                        },
+                        quantity: {
+                            type: "integer",
+                            minimum: 0,
+                            example: 15,
+                        },
+                        category: {
+                            type: "string",
+                            nullable: true,
+                            example: "Electronics",
+                        },
+                        lowStockThreshold: {
+                            type: "integer",
+                            minimum: 0,
+                            example: 5,
+                        },
+                    },
+                },
+
+                StockAdjustment: {
+                    type: "object",
+                    required: ["quantityDelta"],
+                    properties: {
+                        quantityDelta: {
+                            type: "integer",
+                            example: -3,
+                            description:
+                                "Positive values add stock. Negative values remove stock.",
+                        },
+                    },
+                },
+
+                Pagination: {
+                    type: "object",
+                    properties: {
+                        page: {
+                            type: "integer",
+                            example: 1,
+                        },
+                        limit: {
+                            type: "integer",
+                            example: 10,
+                        },
+                        total: {
+                            type: "integer",
+                            example: 25,
+                        },
+                        totalPages: {
+                            type: "integer",
+                            example: 3,
+                        },
+                    },
+                },
+
+                ProductListResponse: {
+                    type: "object",
+                    properties: {
+                        success: {
+                            type: "boolean",
+                            example: true,
+                        },
+                        data: {
+                            type: "array",
+                            items: {
+                                $ref: "#/components/schemas/Product",
+                            },
+                        },
+                        pagination: {
+                            $ref: "#/components/schemas/Pagination",
                         },
                     },
                 },
@@ -150,6 +372,25 @@ const options = {
                             type: "string",
                             example:
                                 "Product not found",
+                        },
+                        errors: {
+                            type: "array",
+                            description:
+                                "Validation errors, when applicable.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    field: {
+                                        type: "string",
+                                        example: "price",
+                                    },
+                                    message: {
+                                        type: "string",
+                                        example:
+                                            "Price must be greater than or equal to 0",
+                                    },
+                                },
+                            },
                         },
                     },
                 },

@@ -1,30 +1,12 @@
 const prisma = require("../config/prisma");
 
-/**
- * Product Repository
- *
- * The repository is responsible only for
- * communicating with the database through Prisma.
- */
 const productRepository = {
-    /**
-     * Create a new product.
-     */
     async create(productData) {
         return prisma.product.create({
             data: productData,
         });
     },
 
-    /**
-     * Retrieve products.
-     *
-     * Supports:
-     * - Search by product name
-     * - Filter by category
-     * - Sorting
-     * - Pagination
-     */
     async findAll(options = {}) {
         const {
             search,
@@ -83,9 +65,6 @@ const productRepository = {
         return prisma.product.findMany(queryOptions);
     },
 
-    /**
-     * Retrieve products with pagination metadata.
-     */
     async findAllPaginated(options = {}) {
         const {
             search,
@@ -152,9 +131,6 @@ const productRepository = {
         };
     },
 
-    /**
-     * Retrieve products that are low in stock.
-     */
     async findLowStock() {
         return prisma.$queryRaw`
             SELECT *
@@ -164,9 +140,6 @@ const productRepository = {
         `;
     },
 
-    /**
-     * Retrieve inventory statistics.
-     */
     async getInventoryStats() {
         const result = await prisma.$queryRaw`
             SELECT
@@ -193,18 +166,6 @@ const productRepository = {
         };
     },
 
-    /**
-     * Atomically adjust product stock.
-     *
-     * Positive quantityDelta increases stock.
-     *
-     * Negative quantityDelta decreases stock,
-     * but only when enough stock is available.
-     *
-     * updateMany() is used for the decrement condition
-     * so the database prevents the quantity from becoming
-     * negative during concurrent requests.
-     */
     async adjustStock(id, quantityDelta) {
         if (quantityDelta > 0) {
             await prisma.product.updateMany({
@@ -246,9 +207,6 @@ const productRepository = {
         });
     },
 
-    /**
-     * Find a product by its ID.
-     */
     async findById(id) {
         return prisma.product.findUnique({
             where: {
@@ -257,9 +215,6 @@ const productRepository = {
         });
     },
 
-    /**
-     * Find a product by its SKU.
-     */
     async findBySku(sku) {
         return prisma.product.findUnique({
             where: {
@@ -268,9 +223,6 @@ const productRepository = {
         });
     },
 
-    /**
-     * Update a product by its ID.
-     */
     async update(id, productData) {
         return prisma.product.update({
             where: {
@@ -280,16 +232,13 @@ const productRepository = {
         });
     },
 
-    /**
-     * Delete a product by its ID.
-     */
     async delete(id) {
-        return prisma.product.delete({
-            where: {
-                id,
-            },
-        });
-    },
+    return prisma.product.delete({
+        where: {
+            id,
+        },
+    });
+},
 };
 
 module.exports = productRepository;

@@ -4,599 +4,887 @@ const productController = require("../src/controllers/productController");
 jest.mock("../src/services/productService");
 
 describe("Product Controller", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+beforeEach(() => {
+jest.clearAllMocks();
+});
+
+describe("createProduct", () => {
+    test("should create a product and return 201", async () => {
+        const productData = {
+            name: "Laptop",
+            sku: "LAPTOP-001",
+            price: 999.99,
+            quantity: 10,
+        };
+
+        const createdProduct = {
+            id: 1,
+            ...productData,
+        };
+
+        const req = {
+            body: productData,
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.createProduct.mockResolvedValue(
+            createdProduct
+        );
+
+        await productController.createProduct(req, res, next);
+
+        expect(productService.createProduct).toHaveBeenCalledWith(
+            productData
+        );
+
+        expect(res.status).toHaveBeenCalledWith(201);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: createdProduct,
+        });
+
+        expect(next).not.toHaveBeenCalled();
     });
 
-    describe("createProduct", () => {
-        test("should create a product and return 201", async () => {
-            const productData = {
+    test("should pass errors to next", async () => {
+        const error = new Error("Something went wrong");
+
+        const req = {
+            body: {
                 name: "Laptop",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.createProduct.mockRejectedValue(error);
+
+        await productController.createProduct(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getAllProducts", () => {
+    test("should retrieve all products", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Laptop",
+            },
+            {
+                id: 2,
+                name: "Mouse",
+            },
+        ];
+
+        const req = {
+            query: {},
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith(
+            {}
+        );
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: products,
+        });
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("should pass search query to the service", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Gaming Laptop",
+            },
+        ];
+
+        const req = {
+            query: {
+                search: "laptop",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith({
+            search: "laptop",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: products,
+        });
+    });
+
+    test("should pass category query to the service", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Gaming Laptop",
+                category: "Electronics",
+            },
+        ];
+
+        const req = {
+            query: {
+                category: "Electronics",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith({
+            category: "Electronics",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("should pass sorting queries to the service", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Expensive Laptop",
+                price: 2000,
+            },
+            {
+                id: 2,
+                name: "Cheap Laptop",
+                price: 500,
+            },
+        ];
+
+        const req = {
+            query: {
+                sortBy: "price",
+                order: "desc",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith({
+            sortBy: "price",
+            order: "desc",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("should pass pagination queries to the service", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Laptop",
+            },
+        ];
+
+        const req = {
+            query: {
+                page: "2",
+                limit: "10",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith({
+            page: "2",
+            limit: "10",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("should pass combined query parameters to the service", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Gaming Laptop",
+                category: "Electronics",
+                price: 1500,
+            },
+        ];
+
+        const req = {
+            query: {
+                search: "laptop",
+                category: "Electronics",
+                sortBy: "price",
+                order: "desc",
+                page: "1",
+                limit: "10",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockResolvedValue(products);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(productService.getAllProducts).toHaveBeenCalledWith({
+            search: "laptop",
+            category: "Electronics",
+            sortBy: "price",
+            order: "desc",
+            page: "1",
+            limit: "10",
+        });
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: products,
+        });
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error("Something went wrong");
+
+        const req = {
+            query: {},
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getAllProducts.mockRejectedValue(error);
+
+        await productController.getAllProducts(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getPaginatedProducts", () => {
+    test("should return paginated products", async () => {
+        const result = {
+            products: [
+                {
+                    id: 1,
+                    name: "Laptop",
+                },
+            ],
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: 1,
+                totalPages: 1,
+            },
+        };
+
+        const req = {
+            query: {
+                page: "1",
+                limit: "10",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getPaginatedProducts.mockResolvedValue(
+            result
+        );
+
+        await productController.getPaginatedProducts(
+            req,
+            res,
+            next
+        );
+
+        expect(
+            productService.getPaginatedProducts
+        ).toHaveBeenCalledWith(req.query);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: result.products,
+            pagination: result.pagination,
+        });
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error(
+            "Failed to retrieve paginated products"
+        );
+
+        const req = {
+            query: {},
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getPaginatedProducts.mockRejectedValue(
+            error
+        );
+
+        await productController.getPaginatedProducts(
+            req,
+            res,
+            next
+        );
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getLowStockProducts", () => {
+    test("should return low-stock products", async () => {
+        const products = [
+            {
+                id: 1,
+                name: "Laptop",
+                quantity: 2,
+                lowStockThreshold: 5,
+            },
+        ];
+
+        const req = {};
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getLowStockProducts.mockResolvedValue(
+            products
+        );
+
+        await productController.getLowStockProducts(
+            req,
+            res,
+            next
+        );
+
+        expect(
+            productService.getLowStockProducts
+        ).toHaveBeenCalled();
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: products,
+        });
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error(
+            "Failed to retrieve low-stock products"
+        );
+
+        const req = {};
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getLowStockProducts.mockRejectedValue(
+            error
+        );
+
+        await productController.getLowStockProducts(
+            req,
+            res,
+            next
+        );
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getInventoryStats", () => {
+    test("should return inventory statistics", async () => {
+        const stats = {
+            totalProducts: 10,
+            totalQuantity: 150,
+            lowStockCount: 3,
+            inventoryValue: 25000,
+        };
+
+        const req = {};
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getInventoryStats.mockResolvedValue(
+            stats
+        );
+
+        await productController.getInventoryStats(
+            req,
+            res,
+            next
+        );
+
+        expect(
+            productService.getInventoryStats
+        ).toHaveBeenCalled();
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: stats,
+        });
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error(
+            "Failed to retrieve inventory statistics"
+        );
+
+        const req = {};
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getInventoryStats.mockRejectedValue(
+            error
+        );
+
+        await productController.getInventoryStats(
+            req,
+            res,
+            next
+        );
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("adjustStock", () => {
+    test("should adjust product stock", async () => {
+        const product = {
+            id: 1,
+            name: "Laptop",
+            quantity: 15,
+        };
+
+        const req = {
+            params: {
+                id: "1",
+            },
+            body: {
+                quantityDelta: 5,
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.adjustStock.mockResolvedValue(product);
+
+        await productController.adjustStock(req, res, next);
+
+        expect(productService.adjustStock).toHaveBeenCalledWith(
+            "1",
+            5
+        );
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: product,
+        });
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error("Insufficient stock");
+
+        const req = {
+            params: {
+                id: "1",
+            },
+            body: {
+                quantityDelta: -100,
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.adjustStock.mockRejectedValue(error);
+
+        await productController.adjustStock(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getProductById", () => {
+    test("should return a product by ID", async () => {
+        const product = {
+            id: 1,
+            name: "Laptop",
+        };
+
+        const req = {
+            params: {
+                id: "1",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getProductById.mockResolvedValue(product);
+
+        await productController.getProductById(req, res, next);
+
+        expect(productService.getProductById).toHaveBeenCalledWith(
+            "1"
+        );
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: product,
+        });
+    });
+
+    test("should pass errors to next", async () => {
+        const error = new Error("Product not found");
+
+        const req = {
+            params: {
+                id: "999",
+            },
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const next = jest.fn();
+
+        productService.getProductById.mockRejectedValue(error);
+
+        await productController.getProductById(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
+
+describe("getProductBySku", () => {
+    test("should return a product by SKU", async () => {
+        const product = {
+            id: 1,
+            name: "Laptop",
+            sku: "LAPTOP-001",
+        };
+
+        const req = {
+            params: {
                 sku: "LAPTOP-001",
-                price: 999.99,
-                quantity: 10,
-            };
+            },
+        };
 
-            const createdProduct = {
-                id: 1,
-                ...productData,
-            };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            const req = {
-                body: productData,
-            };
+        const next = jest.fn();
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        productService.getProductBySku.mockResolvedValue(product);
 
-            const next = jest.fn();
+        await productController.getProductBySku(req, res, next);
 
-            productService.createProduct.mockResolvedValue(
-                createdProduct
-            );
+        expect(productService.getProductBySku).toHaveBeenCalledWith(
+            "LAPTOP-001"
+        );
 
-            await productController.createProduct(req, res, next);
+        expect(res.status).toHaveBeenCalledWith(200);
 
-            expect(productService.createProduct).toHaveBeenCalledWith(
-                productData
-            );
-
-            expect(res.status).toHaveBeenCalledWith(201);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: createdProduct,
-            });
-
-            expect(next).not.toHaveBeenCalled();
-        });
-
-        test("should pass errors to next", async () => {
-            const error = new Error("Something went wrong");
-
-            const req = {
-                body: {
-                    name: "Laptop",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.createProduct.mockRejectedValue(error);
-
-            await productController.createProduct(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: product,
         });
     });
 
-    describe("getAllProducts", () => {
-        test("should retrieve all products", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Laptop",
-                },
-                {
-                    id: 2,
-                    name: "Mouse",
-                },
-            ];
+    test("should pass errors to next", async () => {
+        const error = new Error("Product not found");
 
-            const req = {
-                query: {},
-            };
+        const req = {
+            params: {
+                sku: "UNKNOWN",
+            },
+        };
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            const next = jest.fn();
+        const next = jest.fn();
 
-            productService.getAllProducts.mockResolvedValue(products);
+        productService.getProductBySku.mockRejectedValue(error);
 
-            await productController.getAllProducts(req, res, next);
+        await productController.getProductBySku(req, res, next);
 
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {}
-            );
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
 
-            expect(res.status).toHaveBeenCalledWith(200);
+describe("updateProduct", () => {
+    test("should update a product", async () => {
+        const updateData = {
+            name: "Updated Laptop",
+            price: 1200,
+        };
 
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: products,
-            });
+        const updatedProduct = {
+            id: 1,
+            name: "Updated Laptop",
+            price: 1200,
+        };
 
-            expect(next).not.toHaveBeenCalled();
-        });
+        const req = {
+            params: {
+                id: "1",
+            },
+            body: updateData,
+        };
 
-        test("should pass search query to the service", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Gaming Laptop",
-                },
-            ];
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            const req = {
-                query: {
-                    search: "laptop",
-                },
-            };
+        const next = jest.fn();
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        productService.updateProduct.mockResolvedValue(
+            updatedProduct
+        );
 
-            const next = jest.fn();
+        await productController.updateProduct(req, res, next);
 
-            productService.getAllProducts.mockResolvedValue(products);
+        expect(productService.updateProduct).toHaveBeenCalledWith(
+            "1",
+            updateData
+        );
 
-            await productController.getAllProducts(req, res, next);
+        expect(res.status).toHaveBeenCalledWith(200);
 
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {
-                    search: "laptop",
-                }
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: products,
-            });
-        });
-
-        test("should pass category query to the service", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Gaming Laptop",
-                    category: "Electronics",
-                },
-            ];
-
-            const req = {
-                query: {
-                    category: "Electronics",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getAllProducts.mockResolvedValue(products);
-
-            await productController.getAllProducts(req, res, next);
-
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {
-                    category: "Electronics",
-                }
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        test("should pass sorting queries to the service", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Expensive Laptop",
-                    price: 2000,
-                },
-                {
-                    id: 2,
-                    name: "Cheap Laptop",
-                    price: 500,
-                },
-            ];
-
-            const req = {
-                query: {
-                    sortBy: "price",
-                    order: "desc",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getAllProducts.mockResolvedValue(products);
-
-            await productController.getAllProducts(req, res, next);
-
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {
-                    sortBy: "price",
-                    order: "desc",
-                }
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        test("should pass pagination queries to the service", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Laptop",
-                },
-            ];
-
-            const req = {
-                query: {
-                    page: "2",
-                    limit: "10",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getAllProducts.mockResolvedValue(products);
-
-            await productController.getAllProducts(req, res, next);
-
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {
-                    page: "2",
-                    limit: "10",
-                }
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        test("should pass combined query parameters to the service", async () => {
-            const products = [
-                {
-                    id: 1,
-                    name: "Gaming Laptop",
-                    category: "Electronics",
-                    price: 1500,
-                },
-            ];
-
-            const req = {
-                query: {
-                    search: "laptop",
-                    category: "Electronics",
-                    sortBy: "price",
-                    order: "desc",
-                    page: "1",
-                    limit: "10",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getAllProducts.mockResolvedValue(products);
-
-            await productController.getAllProducts(req, res, next);
-
-            expect(productService.getAllProducts).toHaveBeenCalledWith(
-                {
-                    search: "laptop",
-                    category: "Electronics",
-                    sortBy: "price",
-                    order: "desc",
-                    page: "1",
-                    limit: "10",
-                }
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: products,
-            });
-        });
-
-        test("should pass errors to next", async () => {
-            const error = new Error("Something went wrong");
-
-            const req = {
-                query: {},
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getAllProducts.mockRejectedValue(error);
-
-            await productController.getAllProducts(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: updatedProduct,
         });
     });
 
-    describe("getProductById", () => {
-        test("should return a product by ID", async () => {
-            const product = {
-                id: 1,
-                name: "Laptop",
-            };
+    test("should pass errors to next", async () => {
+        const error = new Error("Product not found");
 
-            const req = {
-                params: {
-                    id: "1",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getProductById.mockResolvedValue(product);
-
-            await productController.getProductById(req, res, next);
-
-            expect(productService.getProductById).toHaveBeenCalledWith(
-                "1"
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: product,
-            });
-        });
-
-        test("should pass errors to next", async () => {
-            const error = new Error("Product not found");
-
-            const req = {
-                params: {
-                    id: "999",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getProductById.mockRejectedValue(error);
-
-            await productController.getProductById(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
-        });
-    });
-
-    describe("getProductBySku", () => {
-        test("should return a product by SKU", async () => {
-            const product = {
-                id: 1,
-                name: "Laptop",
-                sku: "LAPTOP-001",
-            };
-
-            const req = {
-                params: {
-                    sku: "LAPTOP-001",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getProductBySku.mockResolvedValue(product);
-
-            await productController.getProductBySku(req, res, next);
-
-            expect(productService.getProductBySku).toHaveBeenCalledWith(
-                "LAPTOP-001"
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: product,
-            });
-        });
-
-        test("should pass errors to next", async () => {
-            const error = new Error("Product not found");
-
-            const req = {
-                params: {
-                    sku: "UNKNOWN",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.getProductBySku.mockRejectedValue(error);
-
-            await productController.getProductBySku(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
-        });
-    });
-
-    describe("updateProduct", () => {
-        test("should update a product", async () => {
-            const updateData = {
+        const req = {
+            params: {
+                id: "999",
+            },
+            body: {
                 name: "Updated Laptop",
-                price: 1200,
-            };
+            },
+        };
 
-            const updatedProduct = {
-                id: 1,
-                name: "Updated Laptop",
-                price: 1200,
-            };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            const req = {
-                params: {
-                    id: "1",
-                },
-                body: updateData,
-            };
+        const next = jest.fn();
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        productService.updateProduct.mockRejectedValue(error);
 
-            const next = jest.fn();
+        await productController.updateProduct(req, res, next);
 
-            productService.updateProduct.mockResolvedValue(
-                updatedProduct
-            );
+        expect(next).toHaveBeenCalledWith(error);
+    });
+});
 
-            await productController.updateProduct(req, res, next);
+describe("deleteProduct", () => {
+    test("should delete a product", async () => {
+        const deletedProduct = {
+            id: 1,
+            name: "Laptop",
+        };
 
-            expect(productService.updateProduct).toHaveBeenCalledWith(
-                "1",
-                updateData
-            );
+        const req = {
+            params: {
+                id: "1",
+            },
+        };
 
-            expect(res.status).toHaveBeenCalledWith(200);
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: updatedProduct,
-            });
-        });
+        const next = jest.fn();
 
-        test("should pass errors to next", async () => {
-            const error = new Error("Product not found");
+        productService.deleteProduct.mockResolvedValue(
+            deletedProduct
+        );
 
-            const req = {
-                params: {
-                    id: "999",
-                },
-                body: {
-                    name: "Updated Laptop",
-                },
-            };
+        await productController.deleteProduct(req, res, next);
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        expect(productService.deleteProduct).toHaveBeenCalledWith(
+            "1"
+        );
 
-            const next = jest.fn();
+        expect(res.status).toHaveBeenCalledWith(200);
 
-            productService.updateProduct.mockRejectedValue(error);
-
-            await productController.updateProduct(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: deletedProduct,
         });
     });
 
-    describe("deleteProduct", () => {
-        test("should delete a product", async () => {
-            const deletedProduct = {
-                id: 1,
-                name: "Laptop",
-            };
+    test("should pass errors to next", async () => {
+        const error = new Error("Product not found");
 
-            const req = {
-                params: {
-                    id: "1",
-                },
-            };
+        const req = {
+            params: {
+                id: "999",
+            },
+        };
 
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
 
-            const next = jest.fn();
+        const next = jest.fn();
 
-            productService.deleteProduct.mockResolvedValue(
-                deletedProduct
-            );
+        productService.deleteProduct.mockRejectedValue(error);
 
-            await productController.deleteProduct(req, res, next);
+        await productController.deleteProduct(req, res, next);
 
-            expect(productService.deleteProduct).toHaveBeenCalledWith(
-                "1"
-            );
-
-            expect(res.status).toHaveBeenCalledWith(200);
-
-            expect(res.json).toHaveBeenCalledWith({
-                success: true,
-                data: deletedProduct,
-            });
-        });
-
-        test("should pass errors to next", async () => {
-            const error = new Error("Product not found");
-
-            const req = {
-                params: {
-                    id: "999",
-                },
-            };
-
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
-            };
-
-            const next = jest.fn();
-
-            productService.deleteProduct.mockRejectedValue(error);
-
-            await productController.deleteProduct(req, res, next);
-
-            expect(next).toHaveBeenCalledWith(error);
-        });
+        expect(next).toHaveBeenCalledWith(error);
     });
+});
 });

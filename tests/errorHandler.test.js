@@ -9,8 +9,6 @@ describe("Error handling", () => {
     beforeEach(() => {
         app = express();
 
-        // Prevent expected test errors from cluttering
-        // the Jest output.
         jest.spyOn(console, "error").mockImplementation(
             () => {}
         );
@@ -91,7 +89,7 @@ describe("Error handling", () => {
             "/test-prisma-unique",
             (req, res, next) => {
                 const error = new Error(
-                    "Unique constraint failed on the fields: (`sku`)"
+                    "Unique constraint failed"
                 );
 
                 error.code = "P2002";
@@ -120,7 +118,7 @@ describe("Error handling", () => {
             "/test-prisma-sku-unique",
             (req, res, next) => {
                 const error = new Error(
-                    "Unique constraint failed on the fields: (`sku`)"
+                    "Unique constraint failed"
                 );
 
                 error.code = "P2002";
@@ -152,7 +150,7 @@ describe("Error handling", () => {
             "/test-prisma-email-unique",
             (req, res, next) => {
                 const error = new Error(
-                    "Unique constraint failed on the fields: (`email`)"
+                    "Unique constraint failed"
                 );
 
                 error.code = "P2002";
@@ -271,115 +269,124 @@ describe("Error handling", () => {
     });
 
     test("should log expected client errors as warnings", async () => {
-    const warn = jest.fn();
-    const error = jest.fn();
+        const warn = jest.fn();
+        const error = jest.fn();
 
-    app.get("/test-client-error", (req, res, next) => {
-        req.log = {
-            warn,
-            error,
-        };
+        app.get(
+            "/test-client-error",
+            (req, res, next) => {
+                req.log = {
+                    warn,
+                    error,
+                };
 
-        const clientError = new Error(
-            "Product not found"
+                const clientError = new Error(
+                    "Product not found"
+                );
+
+                clientError.statusCode = 404;
+
+                next(clientError);
+            }
         );
 
-        clientError.statusCode = 404;
+        app.use(errorHandler);
 
-        next(clientError);
-    });
-
-    app.use(errorHandler);
-
-    const response = await request(app).get(
-        "/test-client-error"
-    );
-
-    expect(response.statusCode).toBe(404);
-
-    expect(warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-            statusCode: 404,
-        }),
-        "Request failed"
-    );
-
-    expect(error).not.toHaveBeenCalled();
-});
-
-test("should log 409 conflicts as warnings", async () => {
-    const warn = jest.fn();
-    const error = jest.fn();
-
-    app.get("/test-conflict-logging", (req, res, next) => {
-        req.log = {
-            warn,
-            error,
-        };
-
-        const conflictError = new Error(
-            "A product with this SKU already exists"
+        const response = await request(app).get(
+            "/test-client-error"
         );
 
-        conflictError.statusCode = 409;
+        expect(response.statusCode).toBe(404);
 
-        next(conflictError);
-    });
-
-    app.use(errorHandler);
-
-    const response = await request(app).get(
-        "/test-conflict-logging"
-    );
-
-    expect(response.statusCode).toBe(409);
-
-    expect(warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-            statusCode: 409,
-        }),
-        "Request failed"
-    );
-
-    expect(error).not.toHaveBeenCalled();
-});
-
-test("should log unexpected server errors as errors", async () => {
-    const warn = jest.fn();
-    const error = jest.fn();
-
-    app.get("/test-server-error-logging", (req, res, next) => {
-        req.log = {
-            warn,
-            error,
-        };
-
-        const serverError = new Error(
-            "Database connection failed"
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                statusCode: 404,
+            }),
+            "Request failed"
         );
 
-        serverError.statusCode = 500;
-
-        next(serverError);
+        expect(error).not.toHaveBeenCalled();
     });
 
-    app.use(errorHandler);
+    test("should log 409 conflicts as warnings", async () => {
+        const warn = jest.fn();
+        const error = jest.fn();
 
-    const response = await request(app).get(
-        "/test-server-error-logging"
-    );
+        app.get(
+            "/test-conflict-logging",
+            (req, res, next) => {
+                req.log = {
+                    warn,
+                    error,
+                };
 
-    expect(response.statusCode).toBe(500);
+                const conflictError = new Error(
+                    "A product with this SKU already exists"
+                );
 
-    expect(error).toHaveBeenCalledWith(
-        expect.objectContaining({
-            statusCode: 500,
-        }),
-        "Request failed"
-    );
+                conflictError.statusCode = 409;
 
-    expect(warn).not.toHaveBeenCalled();
-});
+                next(conflictError);
+            }
+        );
+
+        app.use(errorHandler);
+
+        const response = await request(app).get(
+            "/test-conflict-logging"
+        );
+
+        expect(response.statusCode).toBe(409);
+
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                statusCode: 409,
+            }),
+            "Request failed"
+        );
+
+        expect(error).not.toHaveBeenCalled();
+    });
+
+    test("should log unexpected server errors as errors", async () => {
+        const warn = jest.fn();
+        const error = jest.fn();
+
+        app.get(
+            "/test-server-error-logging",
+            (req, res, next) => {
+                req.log = {
+                    warn,
+                    error,
+                };
+
+                const serverError = new Error(
+                    "Database connection failed"
+                );
+
+                serverError.statusCode = 500;
+
+                next(serverError);
+            }
+        );
+
+        app.use(errorHandler);
+
+        const response = await request(app).get(
+            "/test-server-error-logging"
+        );
+
+        expect(response.statusCode).toBe(500);
+
+        expect(error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                statusCode: 500,
+            }),
+            "Request failed"
+        );
+
+        expect(warn).not.toHaveBeenCalled();
+    });
 
     test("should use 500 when an error does not provide a status code", async () => {
         app.get(
@@ -404,6 +411,31 @@ test("should log unexpected server errors as errors", async () => {
         expect(response.body).toEqual({
             success: false,
             message: "Internal server error",
+        });
+    });
+
+    test("should use the default message when a client error has no message", async () => {
+        app.get(
+            "/test-empty-message",
+            (req, res, next) => {
+                const error = new Error("");
+                error.statusCode = 400;
+
+                next(error);
+            }
+        );
+
+        app.use(errorHandler);
+
+        const response = await request(app).get(
+            "/test-empty-message"
+        );
+
+        expect(response.statusCode).toBe(400);
+
+        expect(response.body).toEqual({
+            success: false,
+            message: "Request failed",
         });
     });
 });

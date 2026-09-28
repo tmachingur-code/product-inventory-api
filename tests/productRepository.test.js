@@ -1,9 +1,14 @@
+const prisma = require("../src/config/prisma");
 const productRepository = require("../src/repositories/productRepository");
 const productService = require("../src/services/productService");
 
-// Mock the repository so these tests focus only on
+// Mock the repository so service tests focus only on
 // service-layer business logic.
 jest.mock("../src/repositories/productRepository");
+
+const actualProductRepository = jest.requireActual(
+    "../src/repositories/productRepository"
+);
 
 describe("Product Service", () => {
     beforeEach(() => {
@@ -404,5 +409,47 @@ describe("Product Service", () => {
 
             expect(productRepository.delete).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe("Product Repository - Update", () => {
+    test("should update a product by its ID", async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: "Repository Update Test Product",
+                description:
+                    "Product used to test repository update",
+                sku: `UPDATE-TEST-${Date.now()}`,
+                price: 100,
+                quantity: 10,
+                category: "Testing",
+                lowStockThreshold: 5,
+            },
+        });
+
+        try {
+            const updateData = {
+                name: "Updated Repository Product",
+                price: 150,
+            };
+
+            const updatedProduct =
+                await actualProductRepository.update(
+                    product.id,
+                    updateData
+                );
+
+            expect(updatedProduct.id).toBe(product.id);
+            expect(updatedProduct.name).toBe(
+                "Updated Repository Product"
+            );
+            expect(String(updatedProduct.price)).toBe("150");
+        } finally {
+            await prisma.product.delete({
+                where: {
+                    id: product.id,
+                },
+            });
+        }
     });
 });

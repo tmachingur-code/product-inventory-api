@@ -13,7 +13,7 @@ const options = {
 
         servers: [
             {
-                url: "http://localhost:3000",
+                url: "https://product-inventory-api-j3sm.onrender.com",
                 description: "Local development server",
             },
         ],
